@@ -3,9 +3,24 @@ use std::io::Write;
 
 mod ttt;
 
-use ttt::Board;
-use ttt::GameState;
+use ttt::ttt::Board;
+use ttt::ttt::GameState;
 
+use std::process::Command;
+
+fn show_title(text: &str) {
+    let cmd = Command::new("sh")
+            .arg("-c")
+            .arg(format!("figlet {}", text))
+            .output();
+
+    if let Ok(output) = cmd {
+        if let Ok(s) = String::from_utf8(output.stdout) {
+            print!("{}", s);
+            return;
+        }
+    }    
+}
 
 fn input(message: &str) -> String {
     print!("{}", message);
@@ -19,8 +34,7 @@ fn input(message: &str) -> String {
 }
 
 fn main() {
-    let name = "there"; //input("Type your name:");
-    println!("Hello, {}", name);
+    show_title("Hello There");
 
     let mut board = Board::new_board();
 
