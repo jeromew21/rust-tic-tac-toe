@@ -25,7 +25,7 @@ fn main() {
     let mut board = Board::new_board();
 
     let mut player_turn = true;
-    match input("Play as ([X]/O): ").as_str() {
+    match input("Play as ([X]/O)? ").as_str() {
         "o" | "O" => {
             player_turn = false;
         },
@@ -63,7 +63,7 @@ fn main() {
                     Ok(i) => {
                         if i > 0 && i <= 9 {
                             if !board.make_move(i - 1, board.turn) {
-                                println!("Invalid move");
+                                println!("Invalid move. Make sure you choose an empty space.");
                                 continue;
                             }
                         } else {
@@ -78,6 +78,7 @@ fn main() {
                 };
             
         } else {
+            println!("Making AI move");
             board.make_ai_move();
         }
         
