@@ -13,7 +13,8 @@ pub enum GameState {
 
 pub struct Board<'a> {
     pub board: [&'a Space; 9],
-    pub turn: &'a Space
+    pub turn: &'a Space,
+    moves_made: i32,
 }
 
 struct BoardNode<'b> {
@@ -76,6 +77,7 @@ impl<'a> Board<'a> {
                 match self.board[location] {
                     Space::Empty => {
                         self.board[location] = space;
+                        self.moves_made += 1;
                         self.switch_turn();
                         return true;
                     },
@@ -114,13 +116,14 @@ impl<'a> Board<'a> {
     fn real_copy(&self) -> Board<'a> {
         Board {
             board: self.board.clone(),
-            turn: self.turn
+            turn: self.turn,
+            moves_made: self.moves_made
         }
     }
 
     pub fn make_ai_move(&mut self) {
         let ai = AI::from_board(self);
-        if let Some(c) = ai.best_move() {
+        if let Some(c) = ai.best_move(4) {
             self.make_move(c, self.turn);
         }
     }
@@ -133,6 +136,7 @@ impl<'a> Board<'a> {
                 &Space::Empty, &Space::Empty, &Space::Empty,
             ],
             turn: &Space::X,
+            moves_made: 0
         }
     }
 }
@@ -164,7 +168,7 @@ impl<'c> AI<'c> {
         }
     }
 
-    fn minimax(&self, node: &BoardNode, depth: i32, isMax: bool) -> i32 {
+    fn minimax(&self, node: &BoardNode, depth: i32, is_max: bool) -> i32 {
         if depth <= 0 {
             return 0
         }
@@ -174,14 +178,14 @@ impl<'c> AI<'c> {
         for i in node.children() {
             if let Some(c) = i.move_index {
                 flag = false;
-                let flip = if isMax { 1 } else { -1 };
+                let flip = if is_max { 1 } else { -1 };
                 match (node.board.turn, i.board.game_over()) {
-                    (Space::X, GameState::O) => {return -1 * flip;},
-                    (Space::O, GameState::X) => {return -1 * flip;},
-                    (Space::X, GameState::X) => {return 1 * flip;},
-                    (Space::O, GameState::O) => {return 1 * flip;},
+                    (Space::X, GameState::O) => {return -1 * flip * depth;},
+                    (Space::O, GameState::X) => {return -1 * flip * depth;},
+                    (Space::X, GameState::X) => {return 1 * flip * depth;},
+                    (Space::O, GameState::O) => {return 1 * flip * depth;},
                     _ => {
-                        if isMax {
+                        if is_max {
                             let score = self.minimax(&i, depth - 1, false);
                             if score > highest {
                                 highest = score;
@@ -197,15 +201,15 @@ impl<'c> AI<'c> {
             }
         }
         if flag {return 0}; // no children
-        if isMax { highest } else { lowest }
+        if is_max { highest } else { lowest }
     }
 
-    fn best_move(&self) -> Option<usize> {
+    fn best_move(&self, depth: i32) -> Option<usize> {
         let mut highest = -99;
         let mut result:Option<usize> = None;
         for i in self.root.children() {
             if let Some(c) = i.move_index {
-                let score = self.minimax(&i, 4, false);
+                let score = self.minimax(&i, depth, false);
                 if score > highest {
                     highest = score;
                     result = Some(c);

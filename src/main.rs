@@ -24,17 +24,30 @@ fn main() {
 
     let mut board = Board::new_board();
 
-    let mut playerTurn = true;
+    let mut player_turn = true;
+    match input("Play as ([X]/O): ").as_str() {
+        "o" | "O" => {
+            player_turn = false;
+        },
+        _ => {}
+    }
+
     loop {
         board.show();
 
         match board.game_over() {
             GameState::X => {
                 println!("X wins");
+                if !player_turn {
+                    println!("Human victory!");
+                }
                 break;
             },
             GameState::O => {
                 println!("O wins");
+                if player_turn {
+                    println!("Defeated by the evil AI");
+                }
                 break;
             },
             GameState::Draw => {
@@ -44,29 +57,30 @@ fn main() {
             _ => {}
         }
 
-        if playerTurn {
+        if player_turn {
             let num = 
                 match input("Type a move: ").parse::<usize>() {
                     Ok(i) => {
-                        if i > 0 {
-                            i - 1
+                        if i > 0 && i <= 9 {
+                            if !board.make_move(i - 1, board.turn) {
+                                println!("Invalid move");
+                                continue;
+                            }
                         } else {
-                            0
+                            println!("Invalid number.");
+                            continue;
                         }
                     },
                     Err(error) => {
-                        println!("Invalid input");
+                        println!("Please type a number (1-9).");
                         continue;
                     }
                 };
-            if !board.make_move(num, board.turn) {
-                println!("Invalid move");
-                continue;
-            };
+            
         } else {
             board.make_ai_move();
         }
         
-        playerTurn = !playerTurn;
+        player_turn = !player_turn;
     }
 }
