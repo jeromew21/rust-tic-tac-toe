@@ -1,51 +1,15 @@
 use std::io;
+use std::io::Write;
 
-enum Space {
-    X,
-    O,
-    Empty
-}
+mod ttt;
 
-struct Board {
-    board: [Space; 9]
-}
-
-impl Board {
-    fn show(&self) {
-        let mut i: u32 = 0;
-        for s in self.board.iter() {
-            if i % 3 == 0 && i != 0 {
-                println!()
-            }
-            match s {
-                Space::X => print!("X "),
-                Space::O => print!("O "),
-                Space::Empty => print!("  ")
-            }
-            i += 1;
-        }
-        println!()
-    }
-
-    fn make_move(&mut self, location: usize, sp: Space) {
-        self.board[location] = sp;
-    }
-
-    fn new_board() -> Board {
-        Board {
-            board: [
-                Space::Empty, Space::Empty, Space::Empty,
-                Space::Empty, Space::Empty, Space::Empty,
-                Space::Empty, Space::Empty, Space::Empty,
-            ]
-        }
-    }
-}
+use ttt::Board;
+use ttt::GameState;
 
 
 fn input(message: &str) -> String {
-    println!("{}", message);
-
+    print!("{}", message);
+    std::io::stdout().flush();
     let mut guess = String::new();
     io::stdin().read_line(&mut guess)
         .expect("Input error");
@@ -55,11 +19,54 @@ fn input(message: &str) -> String {
 }
 
 fn main() {
-    let name = input("Type your name:");
-
+    let name = "there"; //input("Type your name:");
     println!("Hello, {}", name);
 
-    let board = Board::new_board();
-    board.show();
-}
+    let mut board = Board::new_board();
 
+    let mut playerTurn = true;
+    loop {
+        board.show();
+
+        match board.game_over() {
+            GameState::X => {
+                println!("X wins");
+                break;
+            },
+            GameState::O => {
+                println!("O wins");
+                break;
+            },
+            GameState::Draw => {
+                println!("Cats game");
+                break;
+            },
+            _ => {}
+        }
+
+        if playerTurn {
+            let num = 
+                match input("Type a move: ").parse::<usize>() {
+                    Ok(i) => {
+                        if i > 0 {
+                            i - 1
+                        } else {
+                            0
+                        }
+                    },
+                    Err(error) => {
+                        println!("Invalid input");
+                        continue;
+                    }
+                };
+            if !board.make_move(num, board.turn) {
+                println!("Invalid move");
+                continue;
+            };
+        } else {
+            board.make_ai_move();
+        }
+        
+        playerTurn = !playerTurn;
+    }
+}
