@@ -127,7 +127,7 @@ pub mod ttt {
 
         pub fn make_ai_move(&mut self) {
             let ai = AI::from_board(self);
-            if let Some(c) = ai.best_move(4) {
+            if let Some(c) = ai.best_move(9 - self.moves_made) {
                 self.make_move(c, self.turn);
             }
         }
@@ -178,16 +178,15 @@ pub mod ttt {
             }
             let mut lowest = 99;
             let mut highest = -99;
-            let mut flag = true;
+            let mut is_leaf = true;
             for i in node.children() {
                 if let Some(c) = i.move_index {
-                    flag = false;
-                    let flip = if is_max { 1 } else { -1 };
+                    is_leaf = false;
                     match (node.board.turn, i.board.game_over()) {
-                        (Space::X, GameState::O) => {return -1 * flip * depth;},
-                        (Space::O, GameState::X) => {return -1 * flip * depth;},
-                        (Space::X, GameState::X) => {return 1 * flip * depth;},
-                        (Space::O, GameState::O) => {return 1 * flip * depth;},
+                        (Space::X, GameState::X) | (Space::O, GameState::O) => {
+                            return if is_max { depth * depth } 
+                                else { depth * -1 }
+                        },
                         _ => {
                             if is_max {
                                 let score = self.minimax(&i, depth - 1, false);
@@ -204,7 +203,7 @@ pub mod ttt {
                     }
                 }
             }
-            if flag {return 0}; // no children
+            if is_leaf {return 0}; // no children
             if is_max { highest } else { lowest }
         }
 
@@ -214,17 +213,25 @@ pub mod ttt {
 
             for i in self.root.children() {
                 if let Some(c) = i.move_index {
-                    let score = self.minimax(&i, depth, false);
-                    if score > highest {
-                        highest = score;
-                        best = Vec::new();
-                        best.push(c);
-                    } else if score == highest {
-                        best.push(c);
+                    //Brute heuristic: If we can win, let's win
+                    //Costless in terms of big Omega
+                    match (self.root.board.turn, i.board.game_over()) {
+                        (Space::X, GameState::X) | (Space::O, GameState::O) => {
+                            return Some(c);
+                        },
+                        _ => {
+                            let score = self.minimax(&i, depth, false);
+                            if score > highest {
+                                highest = score;
+                                best = Vec::new();
+                                best.push(c);
+                            } else if score == highest {
+                                best.push(c);
+                            }
+                        }
                     }
                 }
-            }
-                        
+            }      
 
             let i = rand::thread_rng().gen_range(0, best.len());
             
